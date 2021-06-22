@@ -33,7 +33,6 @@ import org.apache.hadoop.ozone.recon.scm.ContainerReplicaHistory;
  */
 @InterfaceStability.Unstable
 public interface ReconContainerMetadataManager {
-
   /**
    * Create new container DB and bulk Store the container to Key prefix
    * mapping.
