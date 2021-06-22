@@ -67,5 +67,4 @@ public class TestReconDBProvider {
         ReconDBProvider.class);
     assertNotNull(reconDBProvider.getDbStore());
   }
-
 }
