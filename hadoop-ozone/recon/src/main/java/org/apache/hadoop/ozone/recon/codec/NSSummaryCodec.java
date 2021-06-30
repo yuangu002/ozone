@@ -19,6 +19,8 @@
 package org.apache.hadoop.ozone.recon.codec;
 
 import org.apache.hadoop.hdds.utils.db.IntegerCodec;
+import org.apache.hadoop.hdds.utils.db.LongCodec;
+import org.apache.hadoop.hdds.utils.db.ShortCodec;
 import org.apache.hadoop.ozone.recon.ReconConstants;
 import org.apache.hadoop.ozone.recon.api.types.NSSummary;
 import org.apache.hadoop.hdds.utils.db.Codec;
@@ -34,15 +36,20 @@ import java.io.IOException;
 public class NSSummaryCodec implements Codec<NSSummary> {
 
   private final Codec<Integer> integerCodec = new IntegerCodec();
-  // 2 int fields + 40-length int array
-  private static final int NUM_OF_INTS = 2 + ReconConstants.NUM_OF_BINS;
+  private final Codec<Short> shortCodec = new ShortCodec();
+  private final Codec<Long> longCodec = new LongCodec();
+  // 1 int fields + 41-length int array
+  private static final int NUM_OF_INTS = 1 + ReconConstants.NUM_OF_BINS;
+  // The expected length of the byte buffer.
+  private static final int RES_SIZE =
+          NUM_OF_INTS * Integer.BYTES + Long.BYTES + Short.BYTES;
 
   @Override
   public byte[] toPersistedFormat(NSSummary object) throws IOException {
-    final int sizeOfRes = NUM_OF_INTS * Integer.BYTES;
-    ByteArrayOutputStream out = new ByteArrayOutputStream(sizeOfRes);
+    ByteArrayOutputStream out = new ByteArrayOutputStream(RES_SIZE);
     out.write(integerCodec.toPersistedFormat(object.getNumOfFiles()));
-    out.write(integerCodec.toPersistedFormat(object.getSizeOfFiles()));
+    out.write(longCodec.toPersistedFormat(object.getSizeOfFiles()));
+    out.write(shortCodec.toPersistedFormat((short)ReconConstants.NUM_OF_BINS));
     int[] fileSizeBucket = object.getFileSizeBucket();
     for (int i = 0; i < ReconConstants.NUM_OF_BINS; ++i) {
       out.write(integerCodec.toPersistedFormat(fileSizeBucket[i]));
@@ -52,13 +59,15 @@ public class NSSummaryCodec implements Codec<NSSummary> {
 
   @Override
   public NSSummary fromPersistedFormat(byte[] rawData) throws IOException {
-    assert(rawData.length == NUM_OF_INTS * Integer.BYTES);
+    assert(rawData.length == RES_SIZE);
     DataInputStream in = new DataInputStream(new ByteArrayInputStream(rawData));
     NSSummary res = new NSSummary();
     res.setNumOfFiles(in.readInt());
-    res.setSizeOfFiles(in.readInt());
-    int[] fileSizeBucket = new int[ReconConstants.NUM_OF_BINS];
-    for (int i = 0; i < ReconConstants.NUM_OF_BINS && in.available() > 0; ++i) {
+    res.setSizeOfFiles(in.readLong());
+    short len = in.readShort();
+    assert(len == (short) ReconConstants.NUM_OF_BINS);
+    int[] fileSizeBucket = new int[len];
+    for (int i = 0; i < len; ++i) {
       fileSizeBucket[i] = in.readInt();
     }
     res.setFileSizeBucket(fileSizeBucket);
