@@ -251,6 +251,47 @@ public final class OMMetadataManagerTestUtils {
   }
 
   /**
+   * Write a key on OM instance.
+   * @throw IOException while writing.
+   */
+  public static  void writeDataToOm(OMMetadataManager omMetadataManager,
+                                    String key,
+                                    String bucket,
+                                    String volume,
+                                    long objectID,
+                                    long parentObjectId,
+                                    long dataSize)
+          throws IOException {
+
+    String omKey = omMetadataManager.getOzoneKey(volume,
+            bucket, key);
+
+    omMetadataManager.getKeyTable().put(omKey,
+            new OmKeyInfo.Builder()
+                    .setBucketName(bucket)
+                    .setVolumeName(volume)
+                    .setKeyName(key)
+                    .setReplicationConfig(new StandaloneReplicationConfig(ONE))
+                    .setObjectID(objectID)
+                    .setParentObjectID(parentObjectId)
+                    .setDataSize(dataSize)
+                    .build());
+  }
+
+  public static OzoneManagerServiceProviderImpl
+      getMockOzoneManagerServiceProvider() throws IOException {
+    OzoneManagerServiceProviderImpl omServiceProviderMock =
+            mock(OzoneManagerServiceProviderImpl.class);
+    OMMetadataManager omMetadataManagerMock = mock(OMMetadataManager.class);
+    Table tableMock = mock(Table.class);
+    when(tableMock.getName()).thenReturn("keyTable");
+    when(omMetadataManagerMock.getKeyTable()).thenReturn(tableMock);
+    when(omServiceProviderMock.getOMMetadataManagerInstance())
+            .thenReturn(omMetadataManagerMock);
+    return omServiceProviderMock;
+  }
+
+  /**
    * Return random pipeline.
    * @return pipeline
    */

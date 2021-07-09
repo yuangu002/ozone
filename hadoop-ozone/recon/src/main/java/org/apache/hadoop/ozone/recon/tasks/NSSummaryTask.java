@@ -301,4 +301,3 @@ public class NSSummaryTask implements ReconOmTask {
     reconNamespaceSummaryManager.storeNSSummary(parentObjectId, nsSummary);
   }
 }
-
