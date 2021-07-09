@@ -278,19 +278,6 @@ public final class OMMetadataManagerTestUtils {
                     .build());
   }
 
-  public static OzoneManagerServiceProviderImpl
-      getMockOzoneManagerServiceProvider() throws IOException {
-    OzoneManagerServiceProviderImpl omServiceProviderMock =
-            mock(OzoneManagerServiceProviderImpl.class);
-    OMMetadataManager omMetadataManagerMock = mock(OMMetadataManager.class);
-    Table tableMock = mock(Table.class);
-    when(tableMock.getName()).thenReturn("keyTable");
-    when(omMetadataManagerMock.getKeyTable()).thenReturn(tableMock);
-    when(omServiceProviderMock.getOMMetadataManagerInstance())
-            .thenReturn(omMetadataManagerMock);
-    return omServiceProviderMock;
-  }
-
   /**
    * Return random pipeline.
    * @return pipeline
