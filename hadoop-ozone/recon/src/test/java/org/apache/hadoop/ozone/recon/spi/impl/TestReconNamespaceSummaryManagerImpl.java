@@ -96,9 +96,6 @@ public class TestReconNamespaceSummaryManagerImpl {
     hmap.put(1L, new NSSummary(1, 2, testBucket, TEST_CHILD_DIR));
     hmap.put(2L, new NSSummary(3, 4, testBucket, TEST_CHILD_DIR));
     hmap.put(3L, new NSSummary(5, 6, testBucket, TEST_CHILD_DIR));
-    hmap.put(1L, new NSSummary(1, 2, testBucket, TEST_CHILD_DIR));
-    hmap.put(2L, new NSSummary(3, 4, testBucket, TEST_CHILD_DIR));
-    hmap.put(3L, new NSSummary(5, 6, testBucket, TEST_CHILD_DIR));
     for (Map.Entry entry: hmap.entrySet()) {
       reconNamespaceSummaryManager.storeNSSummary(
               (long)entry.getKey(), (NSSummary)entry.getValue());
