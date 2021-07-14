@@ -59,7 +59,7 @@ public class TestReconNamespaceSummaryManagerImpl {
   @Before
   public void setUp() throws Exception {
     // Clear namespace table before running each test
-    reconNamespaceSummaryManager.initNSSummaryTable();
+    reconNamespaceSummaryManager.clearNSSummaryTable();
   }
 
   @Test
@@ -78,7 +78,6 @@ public class TestReconNamespaceSummaryManagerImpl {
     Assert.assertEquals("dir1", summary.getDirName());
     Assert.assertEquals("dir2", summary2.getDirName());
     Assert.assertEquals("dir3", summary3.getDirName());
-
     // test child dir is written
     Assert.assertEquals(3, summary.getChildDir().size());
     // non-existent key
@@ -90,7 +89,7 @@ public class TestReconNamespaceSummaryManagerImpl {
     putThreeNSMetadata();
     Assert.assertFalse(
             reconNamespaceSummaryManager.getNSSummaryTable().isEmpty());
-    reconNamespaceSummaryManager.initNSSummaryTable();
+    reconNamespaceSummaryManager.clearNSSummaryTable();
     Assert.assertTrue(
             reconNamespaceSummaryManager.getNSSummaryTable().isEmpty());
   }

@@ -44,6 +44,22 @@ import static org.apache.hadoop.ozone.om.OmMetadataManagerImpl.FILE_TABLE;
 
 /**
  * Task to query data from OMDB and write into Recon RocksDB.
+<<<<<<< HEAD
+=======
+ * Reprocess() will take a snapshots on OMDB, and iterate the keyTable and
+ * dirTable to write all information to RocksDB.
+ *
+ * For FSO-enabled keyTable (fileTable), we need to fetch the parent object
+ * (bucket or directory), increment its numOfKeys by 1, increase its sizeOfKeys
+ * by the file data size, and update the file size distribution bin accordingly.
+ *
+ * For dirTable, we need to fetch the parent object (bucket or directory),
+ * add the current directory's objectID to the parent object's childDir field.
+ *
+ * Process() will write all OMDB updates to RocksDB.
+ * The write logic is the same as above. For update action, we will treat it as
+ * delete old value first, and write updated value then.
+>>>>>>> upstream/master
  */
 public class NSSummaryTask implements ReconOmTask {
   private static final Logger LOG =
@@ -134,8 +150,6 @@ public class NSSummaryTask implements ReconOmTask {
             break;
 
           case UPDATE:
-            // TODO: we may just want to ignore update event on table,
-            //  if objectId and parentObjectId cannot be modified.
             if (oldDirectoryInfo != null) {
               // delete first, then put
               deleteOmDirectoryInfoOnNamespaceDB(oldDirectoryInfo);
@@ -163,21 +177,10 @@ public class NSSummaryTask implements ReconOmTask {
 
   @Override
   public Pair<String, Boolean> reprocess(OMMetadataManager omMetadataManager) {
-    // actually fileTable with FSO
-    Table keyTable = omMetadataManager.getKeyTable();
-
-    TableIterator<String, ? extends Table.KeyValue<String, OmKeyInfo>>
-            keyTableIter = keyTable.iterator();
 
     try {
       // reinit Recon RocksDB's namespace CF.
-      reconNamespaceSummaryManager.initNSSummaryTable();
-
-      while (keyTableIter.hasNext()) {
-        Table.KeyValue<String, OmKeyInfo> kv = keyTableIter.next();
-        OmKeyInfo keyInfo = kv.getValue();
-        writeOmKeyInfoOnNamespaceDB(keyInfo);
-      }
+      reconNamespaceSummaryManager.clearNSSummaryTable();
 
       Table dirTable = omMetadataManager.getDirectoryTable();
       TableIterator<String, ? extends Table.KeyValue<String, OmDirectoryInfo>>
@@ -188,7 +191,17 @@ public class NSSummaryTask implements ReconOmTask {
         OmDirectoryInfo directoryInfo = kv.getValue();
         writeOmDirectoryInfoOnNamespaceDB(directoryInfo);
       }
+      // actually fileTable with FSO
+      Table keyTable = omMetadataManager.getKeyTable();
 
+      TableIterator<String, ? extends Table.KeyValue<String, OmKeyInfo>>
+              keyTableIter = keyTable.iterator();
+
+      while (keyTableIter.hasNext()) {
+        Table.KeyValue<String, OmKeyInfo> kv = keyTableIter.next();
+        OmKeyInfo keyInfo = kv.getValue();
+        writeOmKeyInfoOnNamespaceDB(keyInfo);
+      }
     } catch (IOException ioEx) {
       LOG.error("Unable to reprocess Namespace Summary data in Recon DB. ",
               ioEx);
@@ -215,13 +228,8 @@ public class NSSummaryTask implements ReconOmTask {
     nsSummary.setSizeOfFiles(sizeOfFile + dataSize);
     int binIndex = ReconUtils.getBinIndex(dataSize);
 
-    // make sure the file is within our scope of tracking.
-    if (binIndex >= 0 && binIndex < ReconConstants.NUM_OF_BINS) {
-      ++fileBucket[binIndex];
-      nsSummary.setFileSizeBucket(fileBucket);
-    } else {
-      LOG.warn("File size beyond our tracking scope.");
-    }
+    ++fileBucket[binIndex];
+    nsSummary.setFileSizeBucket(fileBucket);
     reconNamespaceSummaryManager.storeNSSummary(parentObjectId, nsSummary);
   }
 
@@ -251,7 +259,6 @@ public class NSSummaryTask implements ReconOmTask {
     } else {
       LOG.warn("Duplicate write on the same directory.");
     }
-    nsSummary.setChildDir(childDir);
     reconNamespaceSummaryManager.storeNSSummary(parentObjectId, nsSummary);
   }
 
@@ -272,11 +279,6 @@ public class NSSummaryTask implements ReconOmTask {
 
     long dataSize = keyInfo.getDataSize();
     int binIndex = ReconUtils.getBinIndex(dataSize);
-
-    if (binIndex < 0 || binIndex >= ReconConstants.NUM_OF_BINS) {
-      LOG.error("Bucket bin isn't correctly computed.");
-      return;
-    }
 
     // decrement count, data size, and bucket count
     // even if there's no direct key, we still keep the entry because
@@ -307,7 +309,6 @@ public class NSSummaryTask implements ReconOmTask {
     } else {
       LOG.warn("Try to delete a non-existent child.");
     }
-    nsSummary.setChildDir(childDir);
     reconNamespaceSummaryManager.storeNSSummary(parentObjectId, nsSummary);
   }
 }

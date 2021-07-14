@@ -204,6 +204,7 @@ public final class OMMetadataManagerTestUtils {
                     .setBucketName(bucket)
                     .setVolumeName(volume)
                     .setKeyName(key)
+                    .setFileName(fileName)
                     .setReplicationConfig(new StandaloneReplicationConfig(ONE))
                     .setObjectID(objectID)
                     .setParentObjectID(parentObjectId)
@@ -258,34 +259,6 @@ public final class OMMetadataManagerTestUtils {
     when(omServiceProviderMock.getOMMetadataManagerInstance())
             .thenReturn(omMetadataManagerMock);
     return omServiceProviderMock;
-  }
-
-  /**
-   * Write a key on OM instance.
-   * @throw IOException while writing.
-   */
-  public static  void writeDataToOm(OMMetadataManager omMetadataManager,
-                                    String key,
-                                    String bucket,
-                                    String volume,
-                                    long objectID,
-                                    long parentObjectId,
-                                    long dataSize)
-          throws IOException {
-
-    String omKey = omMetadataManager.getOzoneKey(volume,
-            bucket, key);
-
-    omMetadataManager.getKeyTable().put(omKey,
-            new OmKeyInfo.Builder()
-                    .setBucketName(bucket)
-                    .setVolumeName(volume)
-                    .setKeyName(key)
-                    .setReplicationConfig(new StandaloneReplicationConfig(ONE))
-                    .setObjectID(objectID)
-                    .setParentObjectID(parentObjectId)
-                    .setDataSize(dataSize)
-                    .build());
   }
 
   /**
